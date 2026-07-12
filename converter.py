@@ -9,8 +9,8 @@ from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 # ⚠️ သင့် Google Drive Folder ID များကို ဤနေရာတွင် ထည့်ပါ
 # ==========================================
 MP3_FOLDER_ID = "1MZyBBGEvDEbMDEBA5JoMh4rj5vJWSsc-"
-MP4_FOLDER_ID = "1mU6CFCAU3caRayvn1DjV32V7SlYTh1o1"
-IMAGE_FOLDER_ID = "1ViWVGgWJiWEbpIOWc3PhHyiPK89G37F1"
+MP4_FOLDER_ID = "1mU6CFCAU3caRayvn1DjV32V7SlyThlo1"
+IMAGE_FOLDER_ID = "1VIwVGGwJiWEbpIoWc3PhHyiPK89G37F1"
 
 def get_gdrive_service():
     client_id = os.environ.get("GDRIVE_CLIENT_ID")
