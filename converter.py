@@ -32,8 +32,13 @@ def get_gdrive_service():
     return build('drive', 'v3', credentials=creds)
 
 def list_files_in_folder(service, folder_id):
+    # ဖိုင်တွဲထဲက ဖိုင်အားလုံး (အမှိုက်ပုံးထဲ မရောက်သေးသမျှ) ကို သေသေချာချာ ရှာရန် Query ကို ပြင်ဆင်ခြင်း
     query = f"'{folder_id}' in parents and trashed = false"
-    results = service.files().list(q=query, fields="files(id, name)").execute()
+    results = service.files().list(
+        q=query, 
+        fields="files(id, name, mimeType)",
+        pageSize=100  # ဖိုင်အရေအတွက် များများ ဖတ်နိုင်ရန်
+    ).execute()
     return results.get('files', [])
 
 def download_file(service, file_id, file_name):
