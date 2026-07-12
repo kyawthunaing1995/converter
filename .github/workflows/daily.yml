@@ -1,0 +1,30 @@
+name: Daily MP3 to MP4 Converter
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # ဗမာစံတော်ချိန် နေ့တိုင်း မနက် ၆ နာရီခွဲတွင် အော်တို အလုပ်လုပ်မည်
+  workflow_dispatch: # ကိုယ်တိုင် လက်နဲ့ စမ်းနှိပ်ချင်ရင်လည်း ရအောင် လုပ်ထားခြင်း
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-packages: 'google-api-python-client google-auth-httplib2 google-auth-oauthlib requests'
+
+    - name: Install FFmpeg
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+
+    - name: Run Converter Script
+      env:
+        GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+        GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+        GDRIVE_REFRESH_TOKEN: ${{ secrets.GDRIVE_REFRESH_TOKEN }}
+      run: python converter.py
