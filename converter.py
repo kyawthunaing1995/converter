@@ -9,11 +9,10 @@ from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 # ⚠️ သင့် Google Drive Folder ID များကို ဤနေရာတွင် ထည့်ပါ
 # ==========================================
 MP3_FOLDER_ID = "1MZyBBGEvDEbMDEBA5JoMh4rj5vJWSsc-"
-MP4_FOLDER_ID = "1mU6CFCAU3caRayvn1DjV32V7SlyThlo1"
-IMAGE_FOLDER_ID = "1VIwVGGwJiWEbpIoWc3PhHyiPK89G37F1"
+MP4_FOLDER_ID = "1mU6CFCAU3caRayvn1DjV32V7SlYTh1o1"
+IMAGE_FOLDER_ID = "1ViWVGgWJiWEbpIOWc3PhHyiPK89G37F1"
 
 def get_gdrive_service():
-    # GitHub Secrets မှ သော့ချက်များကို လှမ်းယူခြင်း
     client_id = os.environ.get("GDRIVE_CLIENT_ID")
     client_secret = os.environ.get("GDRIVE_CLIENT_SECRET")
     refresh_token = os.environ.get("GDRIVE_REFRESH_TOKEN")
@@ -21,7 +20,6 @@ def get_gdrive_service():
     if not all([client_id, client_secret, refresh_token]):
         raise ValueError("Error: GitHub Secrets ထဲမှာ သော့ချက်များ လိုအပ်နေပါသေးတယ်!")
 
-    # Credentials ကို အသေအချာ တည်ဆောက်ခြင်း (Error မတက်စေရန်)
     creds = Credentials(
         token=None,
         refresh_token=refresh_token,
@@ -32,12 +30,11 @@ def get_gdrive_service():
     return build('drive', 'v3', credentials=creds)
 
 def list_files_in_folder(service, folder_id):
-    # ဖိုင်တွဲထဲက ဖိုင်အားလုံး (အမှိုက်ပုံးထဲ မရောက်သေးသမျှ) ကို သေသေချာချာ ရှာရန် Query ကို ပြင်ဆင်ခြင်း
     query = f"'{folder_id}' in parents and trashed = false"
     results = service.files().list(
         q=query, 
         fields="files(id, name, mimeType)",
-        pageSize=100  # ဖိုင်အရေအတွက် များများ ဖတ်နိုင်ရန်
+        pageSize=100
     ).execute()
     return results.get('files', [])
 
@@ -79,7 +76,7 @@ def main():
         mp3_filename = "input.mp3"
         download_file(service, chosen_mp3['id'], mp3_filename)
 
-        # ပုံ ၁၅ ပုံ Random ရွေးချယ်ခြင်း (ပုံအရေအတွက် နည်းပါက ရှိသလောက်ပဲ ယူမည်)
+        # ပုံ ၁၅ ပုံ Random ရွေးချယ်ခြင်း
         sample_size = min(15, len(image_files))
         chosen_images = random.sample(image_files, sample_size)
         
@@ -89,25 +86,31 @@ def main():
             download_file(service, img['id'], img_filename)
             image_paths.append(img_filename)
 
-        # 2. FFmpeg ဖြင့် ပုံများကို စုစည်းပြီး စက္ကန့်အလိုက် MP4 ပြောင်းခြင်း
+        # 2. FFmpeg ဖြင့် ဗီဒီယိုပြောင်းခြင်း
         output_mp4 = f"{os.path.splitext(chosen_mp3['name'])[0]}.mp4"
         
-        # ကွန်ပျူတာထဲတွင် စာသားဖိုင် (Concat file) အရင်ဆောက်ခြင်း
         with open("images.txt", "w") as f:
             for img_path in image_paths:
                 f.write(f"file '{img_path}'\n")
-                f.write("duration 5\n") # ပုံတစ်ပုံလျှင် ၅ စက္ကန့် ပြပါမည်
-            f.write(f"file '{image_paths[-1]}'\n") # FFmpeg duration bug အဆင်ပြေစေရန်
+                f.write("duration 5\n")
+            f.write(f"file '{image_paths[-1]}'\n")
 
-        # FFmpeg စက်ရုပ် မောင်းနှင်ခြင်း
         ffmpeg_cmd = f"ffmpeg -f concat -safe 0 -i images.txt -i {mp3_filename} -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest -y \"{output_mp4}\""
         os.system(ffmpeg_cmd)
 
-        # 3. ဗီဒီယိုကို Drive သို့ ပြန်တင်ခြင်း
+        # 3. ဗီဒီယိုကို Drive သို့ တင်ခြင်း နှင့် MP3 ဖိုင်ဟောင်းကို ဖျက်ခြင်း
         if os.path.exists(output_mp4):
             upload_file(service, output_mp4, MP4_FOLDER_ID)
             
-            # ယာယီသုံးခဲ့သော ဖိုင်များကို ရှင်းလင်းခြင်း
+            # --- 🌟 ဤနေရာတွင် Google Drive ပေါ်မှ MP3 ဖိုင်ကို လှမ်းဖျက်ပါသည် ---
+            try:
+                service.files().delete(fileId=chosen_mp3['id']).execute()
+                print(f"Drive ပေါ်မှ အသုံးပြုပြီးသား MP3 ဖိုင် ({chosen_mp3['name']}) ကို အောင်မြင်စွာ ဖျက်ဆီးပြီးပါပြီ။")
+            except Exception as delete_error:
+                print(f"Drive ပေါ်က MP3 ဖိုင်ဖျက်ရာတွင် အမှားအယွင်းရှိခဲ့သည်: {delete_error}")
+            # ----------------------------------------------------
+
+            # GitHub စက်ရုပ်ထဲမှ ယာယီဖိုင်များကို ရှင်းလင်းခြင်း
             os.remove(mp3_filename)
             os.remove("images.txt")
             os.remove(output_mp4)
