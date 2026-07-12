@@ -89,7 +89,9 @@ def main():
         print("FFmpeg ဖြင့် MP3 ကြာချိန်အလိုက် ဗီဒီယိုကို Loop စတင်ပတ်နေပါပြီ...")
         
         # -loop 1 က ပုံကို ထပ်ခါတလဲလဲ သုံးခိုင်းပြီး၊ -shortest က အသံဆုံးတာနဲ့ ဗီဒီယိုကို ပိတ်ခိုင်းတာ ဖြစ်ပါတယ်
-        ffmpeg_cmd = f'ffmpeg -loop 1 -i "{chosen_img_path}" -i "{mp3_filename}" -c:v libx264 -preset ultrafast -tune stillimage -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -y "{output_tmp}"'
+       # ffmpeg_cmd = f'ffmpeg -loop 1 -i "{chosen_img_path}" -i "{mp3_filename}" -c:v libx264 -preset ultrafast -tune stillimage -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -y "{output_tmp}"'
+        # -vf ရဲ့ scale စနစ်ဖြင့် ပုံအရွယ်အစား မကိန်းဖြစ်နေပါက စုံကိန်းဖြစ်အောင် အလိုအလျောက် ပြုပြင်ခိုင်းခြင်း
+        ffmpeg_cmd = f'ffmpeg -loop 1 -i "{chosen_img_path}" -i "{mp3_filename}" -c:v libx264 -preset ultrafast -tune stillimage -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -y "{output_tmp}"'    
         os.system(ffmpeg_cmd)
 
         # ဗီဒီယိုဖိုင် အမှန်တကယ်ထွက်လာပြီး 0 KB ထက်ကြီးမကြီး စစ်ဆေးခြင်း
